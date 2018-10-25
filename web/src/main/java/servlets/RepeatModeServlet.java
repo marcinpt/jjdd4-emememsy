@@ -15,7 +15,9 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.*;
 
 @WebServlet("/repeat-mode")
@@ -32,17 +34,33 @@ public class RepeatModeServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        String category = req.getParameter("category");
+        HttpSession session = req.getSession(true);
+        Boolean isAuthorised = (Boolean)session.getAttribute("userName");
+        if(isAuthorised == null|| isAuthorised == false) {
+            resp.sendRedirect("/index.jsp");
+        }
+
+        String userName = (String)session.getAttribute("userNameStr");
+
+        String category = URLDecoder.decode(req.getParameter("category"), "UTF-8");
         String mode = req.getParameter("mode");
 
         if ((category == null || category.isEmpty()) && (mode == null || mode.isEmpty())) {
             resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             LOG.error("The mode was upload uncorectly");
-
             return;
         }
 
-        SingleWord singleWord = selectWord(req, resp);
+        List<String> categories = singleWordDao.findAllCategoriesByUser(userName);
+        if ((!categories.contains(category)) && (!category.equalsIgnoreCase("WSZYSTKIE"))){
+            resp.sendRedirect("/error");
+        }
+
+        if (!mode.equals("repeat-mode")){
+            resp.sendRedirect("/error");
+        }
+
+        SingleWord singleWord = selectWord(req, resp, userName);
 
         Template template = templateProvider.getTemplate(getServletContext(), "repeat-mode.ftlh");
 
@@ -52,27 +70,26 @@ public class RepeatModeServlet extends HttpServlet {
         model.put("mode", mode);
 
         resp.setContentType("text/html;charset=UTF-8");
-        LOG.info("The correct template was load");
 
         try {
             template.process(model, resp.getWriter());
+            LOG.info("fthl template was loaded sussessfully");
         } catch (TemplateException e) {
             e.printStackTrace();
-            LOG.error("Problems with template");
-
+            LOG.error("ftlh template could not be loaded");
         }
     }
 
-    private SingleWord selectWord (HttpServletRequest req, HttpServletResponse resp) {
+    private SingleWord selectWord (HttpServletRequest req, HttpServletResponse resp, String userName) {
 
         SingleWord singleWord = new SingleWord();
         Random randomGenerator = new Random();
         List<SingleWord> listOfWords = new ArrayList<>();
 
         if (req.getParameter("category").equalsIgnoreCase("wszystkie")) {
-            listOfWords = singleWordDao.findByAllCategoriesRepeatMode();
+            listOfWords = singleWordDao.findByAllCategoriesRepeatModeByUser(userName);
         } else {
-            listOfWords = singleWordDao.findByCategoryRepeatMode(req.getParameter("category"));
+            listOfWords = singleWordDao.findByCategoryRepeatModeByUser(req.getParameter("category"), userName);
         }
 
 
@@ -81,6 +98,8 @@ public class RepeatModeServlet extends HttpServlet {
         } else {
             int random = randomGenerator.nextInt(listOfWords.size());
             singleWord = listOfWords.get(random);
+            singleWord.setDisplayed(singleWord.getDisplayed() + 1);
+            singleWordDao.update(singleWord);
             return singleWord;
         }
     }

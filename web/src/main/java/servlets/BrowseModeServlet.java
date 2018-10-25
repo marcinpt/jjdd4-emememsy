@@ -16,6 +16,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
 
@@ -32,6 +33,14 @@ public class BrowseModeServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+        HttpSession session = req.getSession(true);
+        Boolean isAuthorised = (Boolean)session.getAttribute("userName");
+        if(isAuthorised == null|| isAuthorised == false) {
+            resp.sendRedirect("/index.jsp");
+        }
+
+        String userName = (String)session.getAttribute("userNameStr");
+
         String category = req.getParameter("category");
         String mode = req.getParameter("mode");
 
@@ -41,9 +50,18 @@ public class BrowseModeServlet extends HttpServlet {
             return;
         }
 
+        List<String> categories = singleWordDao.findAllCategoriesByUser(userName);
+        if ((!categories.contains(category)) && (!category.equalsIgnoreCase("WSZYSTKIE"))){
+            resp.sendRedirect("/error");
+        }
+
+        if (!mode.equals("browse-mode")){
+            resp.sendRedirect("/error");
+        }
+
         Template template = templateProvider.getTemplate(getServletContext(), "browse-mode.ftlh");
 
-        SingleWord singleWord = selectWord(req, resp);
+        SingleWord singleWord = selectWord(req, resp, userName);
 
         Map<String, Object> model = new HashMap<>();
         model.put("category", category);
@@ -51,23 +69,23 @@ public class BrowseModeServlet extends HttpServlet {
         model.put("mode", mode);
 
         resp.setContentType("text/html;charset=UTF-8");
-        LOG.info("The file was load corectly");
         try {
             template.process(model, resp.getWriter());
+            LOG.info("fthl template was loaded sussessfully");
         } catch (TemplateException e) {
             e.printStackTrace();
-            LOG.error("Problems with template", e.getMessage());
+            LOG.error("ftlh template could not be loaded");
         }
     }
 
-    private SingleWord selectWord (HttpServletRequest req, HttpServletResponse resp){
+    private SingleWord selectWord (HttpServletRequest req, HttpServletResponse resp, String userName){
 
         List<SingleWord> listOfWords = new ArrayList<>();
 
         if (req.getParameter("category").equalsIgnoreCase("wszystkie")) {
-            listOfWords =  singleWordDao.findByAllCategoriesBrowseMode();
+            listOfWords =  singleWordDao.findByAllCategoriesBrowseModeByUser(userName);
         } else {
-            listOfWords = singleWordDao.findByCategoryBrowseMode(req.getParameter("category"));
+            listOfWords = singleWordDao.findByCategoryBrowseModeByUser(req.getParameter("category"), userName);
         }
 
         if(listOfWords.isEmpty()){
@@ -77,6 +95,7 @@ public class BrowseModeServlet extends HttpServlet {
             int random = randomGenerator.nextInt(listOfWords.size());
             SingleWord singleWord = listOfWords.get(random);
             singleWord.setCounter(singleWord.getCounter() + 1);
+            singleWord.setDisplayed(singleWord.getDisplayed() + 1);
             singleWordDao.update(singleWord);
             return singleWord;
         }

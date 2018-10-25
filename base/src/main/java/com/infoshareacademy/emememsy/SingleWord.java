@@ -35,6 +35,33 @@ public class SingleWord{
     @NotNull
     private int counter;
 
+    @Column(name = "displayed", columnDefinition = "int default '0'")
+    @NotNull
+    private int displayed;
+
+    @Column(name = "bad", columnDefinition = "int default '0'")
+    @NotNull
+    private int bad;
+
+    @Column(name = "soso", columnDefinition = "int default '0'")
+    @NotNull
+    private int soso;
+
+    @Column(name = "good", columnDefinition = "int default '0'")
+    @NotNull
+    private int good;
+
+    @Column(name = "remove", columnDefinition = "int default '0'")
+    @NotNull
+    private int remove;
+
+    @Column(name = "remain", columnDefinition = "int default '0'")
+    @NotNull
+    private int remain;
+
+    @Column(name="user_name")
+    private String userName;
+
 
     public SingleWord() {
     }
@@ -44,6 +71,14 @@ public class SingleWord{
         this.translation = translation;
         this.counter = counter;
         this.category = category;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     public void good() {
@@ -106,6 +141,54 @@ public class SingleWord{
         this.id = id;
     }
 
+    public int getDisplayed() {
+        return displayed;
+    }
+
+    public void setDisplayed(int displayed) {
+        this.displayed = displayed;
+    }
+
+    public int getBad() {
+        return bad;
+    }
+
+    public void setBad(int bad) {
+        this.bad = bad;
+    }
+
+    public int getSoso() {
+        return soso;
+    }
+
+    public void setSoso(int soso) {
+        this.soso = soso;
+    }
+
+    public int getGood() {
+        return good;
+    }
+
+    public void setGood(int good) {
+        this.good = good;
+    }
+
+    public int getRemove() {
+        return remove;
+    }
+
+    public void setRemove(int remove) {
+        this.remove = remove;
+    }
+
+    public int getRemain() {
+        return remain;
+    }
+
+    public void setRemain(int remain) {
+        this.remain = remain;
+    }
+
     @Override
     public String toString() {
         return "SingleWord{" +
@@ -137,5 +220,11 @@ public class SingleWord{
         this.category = this.category.toUpperCase();
         this.word = this.word.toUpperCase();
         this.translation = this.translation.toUpperCase();
+    }
+
+    public boolean isValid() {
+        return this.word != null
+         && this.translation != null
+         && this.category != null;
     }
 }

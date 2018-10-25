@@ -12,6 +12,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
     <title>MyWords</title>
+    <style type="text/css">
+        .banner {
+            text-align: center;
+        }
+        .footer{
+            background: white;
+        }
+    </style>
 </head>
 <body>
 
@@ -20,7 +28,7 @@
 
 <main role="main">
 
-    <div class="jumbotron">
+    <div class="jumbotron banner">
         <!--   inject banner here  -->
         <#include "macros/file-upload-banner.ftlh">
     </div>
@@ -46,8 +54,8 @@
           method="POST">
         <div class="container">
             <br/>
-            File: <input type="file" name="dataFile"/>
-            <input type="submit" name="save" value="save"/>
+            Nowy plik: <input type="file" name="dataFile"/>
+            <input type="submit" name="save" value="Zastosuj"/>
         </div>
     </form>
     </div>
@@ -57,14 +65,14 @@
             <#if action == "delete">
                 <h5>Wszystkie słowa zostały usunięte z bazy. Wczytaj swój plik lub przywróć naszą bazę aby korzystać z programu.</h5>
             <#elseif action == "initialize">
-                <h5>Przywróciliśmy pierwotną listę słów. Możesz wczytać swój plik aby dodać kolejne słowa do naszej bazy. Przejdż do Home aby zacząć już teraz korzystać z programu.</h5>
+                <h5>Przywróciliśmy pierwotną listę słów. Możesz wczytać swój plik aby dodać kolejne słowa do naszej bazy. Przejdż do menu głównego aby zacząć już teraz korzystać z programu.</h5>
             </#if>
         </#if>
 
     </div>
 </main>
 
-<footer class="container fixed-bottom">
+<footer class="container fixed-bottom footer">
     <hr>
     <#include "macros/copyright-footer.ftlh">
 </footer>

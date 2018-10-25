@@ -3,6 +3,7 @@ package servlets;
 import com.infoshareacademy.emememsy.Actions;
 import com.infoshareacademy.emememsy.PropertiesReader;
 import com.infoshareacademy.emememsy.SingleWord;
+import dao.SingleWordDao;
 import data.DataProvider;
 import freemarker.TemplateProvider;
 import freemarker.template.Template;
@@ -16,8 +17,10 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @WebServlet("/translation-repeat")
@@ -29,14 +32,19 @@ public class DisplayTranslationRepeatServlet extends HttpServlet {
     @Inject
     private DataProvider dataProvider;
 
-    private Actions actions;
-    private PropertiesReader propertiesReader;
-    private SingleWord singleWord;
-
+    @Inject
+    private SingleWordDao singleWordDao;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+        HttpSession session = req.getSession(true);
+        Boolean isAuthorised = (Boolean)session.getAttribute("userName");
+        if(isAuthorised == null|| isAuthorised == false) {
+            resp.sendRedirect("/index.jsp");
+        }
+
+        String userName = (String)session.getAttribute("userNameStr");
         String mode = req.getParameter("mode");
         String category = req.getParameter("category");
         String word = req.getParameter("word");
@@ -48,6 +56,19 @@ public class DisplayTranslationRepeatServlet extends HttpServlet {
 
             return;
         }
+
+        List<String> words =  singleWordDao.findAllWordsByUser(userName);
+        List<String> translations = singleWordDao.findAllTranslationsByUser(userName);
+        List<String> categories = singleWordDao.findAllCategoriesByUser(userName);
+
+        if ((!words.contains(word)) || (!translations.contains(translation)) || (!categories.contains(category)) && (!category.equalsIgnoreCase("WSZYSTKIE"))){
+            resp.sendRedirect("/error");
+        }
+
+        if (!mode.equals("repeat-mode")){
+            resp.sendRedirect("/error");
+        }
+
         Template template = templateProvider.getTemplate(getServletContext(), "display-translation-repeat.ftlh");
 
         Map<String, Object> model = new HashMap<>();
@@ -57,13 +78,12 @@ public class DisplayTranslationRepeatServlet extends HttpServlet {
         model.put("translation", translation);
 
         resp.setContentType("text/html;charset=UTF-8");
-        LOG.info("The file was load corectly");
         try {
             template.process(model, resp.getWriter());
+            LOG.info("fthl template was loaded sussessfully");
         } catch (TemplateException e) {
             e.printStackTrace();
-            LOG.error("Problems with template");
-
+            LOG.error("ftlh template could not be loaded");
         }
     }
 }

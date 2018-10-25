@@ -9,21 +9,22 @@ import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 import java.net.MalformedURLException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 @ApplicationScoped
 public class DataProvider {
     private static final  Logger LOG = LoggerFactory.getLogger(DataProvider.class);
@@ -53,11 +54,14 @@ public class DataProvider {
 
     public List<SingleWord> getListOfWords(String filePath) {
         List<SingleWord> result = new ArrayList<>();
-
         try {
-            CSVReader reader = new CSVReader(new FileReader(filePath));
+            CSVReader reader = new CSVReader(new InputStreamReader(new FileInputStream(filePath), "UTF-8"));
             CsvToBean<SingleWord> csvToBean = new CsvToBean<>();
-            result.addAll(csvToBean.parse(strategy, reader));
+            List<SingleWord> lines = csvToBean.parse(strategy, reader);
+            if (lines.stream().anyMatch(s -> !s.isValid())) {
+                throw new IllegalArgumentException("Bledny plik CSV");
+            }
+            result.addAll(lines);
             processListOfWords(result);
         } catch (IOException | NumberFormatException e) {
            LOG.error("The file has not been read correctly");
